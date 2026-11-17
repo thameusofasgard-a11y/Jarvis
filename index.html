@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#02060d;--navy:#041326;--cy:#35d8ff;--bl:#1a8cff;--dim:#6fb6d6;--ok:#3dff8a;--warn:#ffb43d;--glass:rgba(6,30,56,.55);--lvl:0}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:radial-gradient(ellipse at 50% 45%,#06223f 0%,var(--bg) 62%);color:#cdefff;font:500 16px/1.35 Rajdhani,'Segoe UI',sans-serif;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(53,216,255,.035) 0 1px,transparent 1px 4px);pointer-events:none;z-index:9}
+#app{display:grid;grid-template-columns:minmax(260px,1fr) minmax(380px,1.35fr) minmax(260px,1fr);gap:14px;height:100vh;padding:14px}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.panel{position:relative;background:var(--glass);backdrop-filter:blur(6px);border:1px solid rgba(53,216,255,.45);padding:12px 14px;box-shadow:0 0 18px rgba(26,140,255,.25),inset 0 0 22px rgba(26,140,255,.08);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));min-height:0}
+.panel h2{font:500 13px Orbitron;letter-spacing:.14em;color:var(--cy);margin-bottom:8px;text-shadow:0 0 8px var(--cy)}
+.grow{flex:1;overflow:auto}.grow::-webkit-scrollbar{width:4px}.grow::-webkit-scrollbar-thumb{background:var(--bl)}
+.row{display:flex;justify-content:space-between;gap:8px}
+.ok{color:var(--ok)}.off{color:var(--warn)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);margin-right:8px}
+.dot.off{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.bar{height:5px;background:rgba(53,216,255,.15);margin:2px 0 7px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--bl),var(--cy));box-shadow:0 0 8px var(--cy);transition:width .6s}
+#brand{font:800 20px Orbitron;font-style:italic;color:#fff;text-shadow:0 0 12px var(--bl)}
+#clock{font:500 28px Orbitron;color:#fff;text-shadow:0 0 14px var(--cy)}
+canvas{width:100%;height:70px;display:block}
+button,input,textarea{font:inherit;color:#cdefff}
+button{background:rgba(26,140,255,.15);border:1px solid rgba(53,216,255,.55);padding:5px 10px;cursor:pointer;transition:background .15s,box-shadow .15s}
+button:hover,button:focus-visible{background:rgba(53,216,255,.3);box-shadow:0 0 12px var(--cy);outline:none}
+button.on{background:var(--cy);color:#001322;box-shadow:0 0 16px var(--cy)}
+input[type=text]{background:rgba(0,10,22,.6);border:1px solid rgba(53,216,255,.4);padding:5px 8px;width:100%}
+input:focus{outline:1px solid var(--cy)}
+/* core */
+#center{align-items:center;justify-content:center}
+#core{position:relative;width:min(100%,52vh);aspect-ratio:1;flex:none}
+#core svg{width:100%;height:100%;overflow:visible}
+.ring{transform-origin:300px 300px;fill:none;stroke:var(--cy)}
+.r1{stroke-width:14;stroke-dasharray:420 1100;animation:spin 14s linear infinite;filter:drop-shadow(0 0 8px var(--cy))}
+.r2{stroke-width:3;stroke-dasharray:3 7;animation:spin 40s linear infinite reverse;stroke:var(--bl)}
+.r3{stroke-width:8;stroke-dasharray:160 600;animation:spin 9s linear infinite reverse;opacity:.8}
+.r4{stroke-width:1.5;opacity:.9}
+.r5{stroke-width:22;stroke-dasharray:2 5;opacity:.45;animation:spin 60s linear infinite}
+.sweep{transform-origin:300px 300px;animation:spin 5s linear infinite;opacity:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{50%{transform:scale(1.025)}}
+@keyframes ping{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.25);opacity:0}}
+#core .inner{transform-origin:300px 300px;animation:breathe 5s ease-in-out infinite}
+#core.listening .r4{stroke-width:4;filter:drop-shadow(0 0 12px var(--cy))}
+#core.listening .pulse{animation:ping 1.6s ease-out infinite;opacity:1}
+#core.processing .r1{animation-duration:1.6s}#core.processing .r3{animation-duration:1.2s}#core.processing .sweep{opacity:1}
+#core.processing #word{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.45}}
+#core.speaking .inner{animation:none;transform:scale(calc(1 + var(--lvl)*.07))}
+#core.speaking .r4{stroke-width:calc(2px + var(--lvl)*10px)}
+.pulse{opacity:0;transform-origin:300px 300px;fill:none;stroke:var(--cy);stroke-width:2}
+#word{font:800 46px Orbitron;fill:#eaffff;letter-spacing:.06em;text-anchor:middle;filter:drop-shadow(0 0 10px var(--cy))}
+#sub{font:500 16px Rajdhani;fill:var(--cy);text-anchor:middle;letter-spacing:.3em}
+#says{width:100%;min-height:62px;font-size:19px;border:1px solid var(--cy);padding:10px 14px;background:rgba(0,16,34,.7);box-shadow:0 0 16px rgba(53,216,255,.25)}
+#cmd{display:flex;gap:8px;width:100%}
+#qa{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+#qa button{flex:1 1 auto}
+.msg{margin-bottom:8px;font-size:15px}.msg b{color:var(--cy);font-weight:600}.msg.user b{color:#fff}
+.mem{display:flex;gap:6px;align-items:flex-start;margin-bottom:5px;font-size:15px}
+.mem span{flex:1;outline:none}.mem span:focus{background:rgba(53,216,255,.12)}
+.mem button{padding:0 6px}
+.rc{cursor:pointer;color:var(--dim);font-size:15px}.rc:hover{color:#fff}
+#modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,6,14,.75);z-index:20}
+#modal.show{display:grid}#modal .panel{max-width:420px;border-color:var(--warn)}
+details summary{cursor:pointer;color:var(--cy);font:500 13px Orbitron;letter-spacing:.14em}
+label{display:block;font-size:14px;margin-top:6px}input[type=range]{width:100%}
+@media(max-width:980px){body{overflow:auto}#app{grid-template-columns:1fr;height:auto}#center{order:-1}.grow{max-height:260px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head><body>
+<div id="app">
+<section class="col" id="left">
+  <div class="panel"><div id="brand">J.A.R.V.I.S.</div>
+    <div id="clock">--:--:--</div><div id="date" style="color:var(--dim)"></div>
+    <div class="row" style="margin-top:8px"><span>System status</span><span class="ok" id="sysok">ONLINE</span></div>
+    <div class="row"><span>CPU</span><span id="cpuv">–</span></div><div class="bar"><i id="cpub"></i></div>
+    <div class="row"><span>Memory</span><span id="ramv">–</span></div><div class="bar"><i id="ramb"></i></div>
+    <div class="row"><span>Disk</span><span id="diskv">–</span></div><div class="bar"><i id="diskb"></i></div>
+    <div class="row" style="color:var(--dim)"><span id="osv"></span><span id="upv"></span></div></div>
+  <div class="panel"><h2>VOICE RECOGNITION</h2><canvas id="wave" width="600" height="140"></canvas>
+    <div class="row" style="align-items:center"><span id="mstat">Microphone off</span><button id="mic">Activate mic</button></div></div>
+  <div class="panel grow" style="display:flex;flex-direction:column"><h2>MEMORY</h2>
+    <div style="display:flex;gap:6px;margin-bottom:8px"><input type="text" id="msearch" placeholder="Search memory"><button id="madd">Add</button></div>
+    <div id="mlist" class="grow"></div></div>
+</section>
+
+<section class="col" id="center">
+  <div id="core" class="idle"><svg viewBox="0 0 600 600" aria-label="J.A.R.V.I.S. core">
+    <defs><linearGradient id="sw" x1="0" x2="1"><stop offset="0" stop-color="#35d8ff" stop-opacity="0"/><stop offset="1" stop-color="#35d8ff" stop-opacity=".5"/></linearGradient></defs>
+    <circle class="ring r5" cx="300" cy="300" r="272"/>
+    <circle class="ring r2" cx="300" cy="300" r="246"/>
+    <g class="inner">
+      <circle class="ring r1" cx="300" cy="300" r="200"/>
+      <circle class="ring r3" cx="300" cy="300" r="176" style="stroke:var(--bl)"/>
+      <circle class="ring r4" cx="300" cy="300" r="152"/>
+      <circle class="pulse" cx="300" cy="300" r="152"/>
+      <path class="sweep" d="M300 300 L300 100 A200 200 0 0 1 440 160 Z" fill="url(#sw)"/>
+      <path d="M300 40V90M300 510V560M40 300H90M510 300H560" stroke="var(--cy)" stroke-width="1.5"/>
+      <text id="word" x="300" y="312">J.A.R.V.I.S.</text><text id="sub" x="300" y="345">STANDBY</text>
+    </g></svg></div>
+  <div id="says">How may I help you, sir?</div>
+  <div id="cmd"><input type="text" id="txt" placeholder="Type a command or say &quot;Hey JARVIS&quot;" autocomplete="off"><button id="send">Send</button><button id="stop" title="Interrupt">Stop</button></div>
+  <div id="qa"></div>
+</section>
+
+<section class="col" id="right">
+  <div class="panel"><h2>SYSTEMS</h2>
+    <div class="row"><span><i class="dot" id="d_brain"></i>Language core</span><span id="s_brain" class="ok">ONLINE</span></div>
+    <div class="row"><span><i class="dot" id="d_voice"></i>Speech input</span><span id="s_voice" class="ok">READY</span></div>
+    <div class="row"><span><i class="dot" id="d_tts"></i>Voice output</span><span id="s_tts" class="ok">READY</span></div>
+    <div class="row"><span><i class="dot"></i>Memory</span><span class="ok" id="s_mem">ACTIVE</span></div></div>
+  <div class="panel"><h2>WEATHER</h2><div id="wx" style="color:var(--dim)">Set WEATHER_LAT and WEATHER_LON in .env to enable.</div></div>
+  <div class="panel grow" style="flex:1.2"><h2>CONVERSATION</h2><div id="hist"></div></div>
+  <div class="panel" style="max-height:130px;overflow:auto"><h2>RECENT COMMANDS</h2><div id="recent"></div></div>
+  <div class="panel"><details><summary>SETTINGS</summary>
+    <label>Greeting<input type="text" id="s_greet" value="At your service, sir."></label>
+    <label>Speech speed <input type="range" id="s_rate" min=".7" max="1.5" step=".05" value="1"></label>
+    <label>Volume <input type="range" id="s_vol" min="0" max="1" step=".05" value="1"></label>
+    <label><input type="checkbox" id="s_wake" checked> Require wake word “Hey JARVIS”</label>
+    <label><input type="checkbox" id="s_memon" checked> Use long-term memory</label></details></div>
+</section>
+</div>
+<div id="modal"><div class="panel"><h2>CONFIRMATION REQUIRED</h2><p id="mdesc" style="margin-bottom:12px"></p>
+  <div class="row"><button id="no">Cancel</button><button id="yes" class="on">Approve</button></div></div></div>
+
+<script>
+const $=id=>document.getElementById(id),api=(p,o)=>fetch('/api/'+p,o).then(r=>r.json()),
+post=(p,b,m='POST')=>api(p,{method:m,headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+const core=$('core'),sub=$('sub');
+let state='idle',awakeUntil=0,micOn=false,rec,audioCtx,analyser,curAudio=null,recent=[];
+function setState(s){state=s;core.className=s;sub.textContent={idle:'STANDBY',listening:'LISTENING',processing:'PROCESSING',speaking:'SPEAKING'}[s]}
+const cfg=()=>({greet:$('s_greet').value,rate:+$('s_rate').value,vol:+$('s_vol').value,wake:$('s_wake').checked});
+
+/* clock + stats */
+setInterval(()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString('en-GB');$('date').textContent=d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})},500);
+async function stats(){try{const s=await api('stats');
+ for(const k of['cpu','ram','disk']){$(k+'v').textContent=s[k]+'%';$(k+'b').style.width=s[k]+'%'}
+ $('osv').textContent=s.os;$('upv').textContent='up '+Math.floor(s.uptime/3600)+'h';$('sysok').textContent='ONLINE';$('sysok').className='ok'}
+ catch{$('sysok').textContent='OFFLINE';$('sysok').className='off'}}
+stats();setInterval(stats,2500);
+const wcode=c=>c==0?'Clear':c<4?'Partly cloudy':c<50?'Fog':c<70?'Rain':c<80?'Snow':'Storms';
+async function weather(){try{const w=await api('weather');if(!w.configured)return;
+ $('wx').innerHTML=`<div style="font:500 30px Orbitron;color:#fff">${Math.round(w.temperature_2m)}°F</div><div>${wcode(w.weather_code)}</div><div style="color:var(--dim)">Humidity ${w.relative_humidity_2m}% · Wind ${Math.round(w.wind_speed_10m)} mph</div>`}catch{}}
+weather();setInterval(weather,6e5);
+
+/* conversation UI */
+function addMsg(role,text){const d=document.createElement('div');d.className='msg '+role;d.innerHTML=`<b>${role=='user'?'You':'JARVIS'}</b> `;d.append(text);$('hist').append(d);$('hist').parentElement.scrollTop=1e6}
+function addRecent(t){recent=[t,...recent.filter(x=>x!==t)].slice(0,6);$('recent').innerHTML='';recent.forEach(r=>{const d=document.createElement('div');d.className='rc';d.textContent=r;d.onclick=()=>ask(r);$('recent').append(d)})}
+async function ask(text){text=text.trim();if(!text)return;stopSpeaking();addMsg('user',text);addRecent(text);$('says').textContent=text;setState('processing');
+ const r=await post('chat',{text});$('says').textContent=r.reply;addMsg('jarvis',r.reply);
+ (r.actions||[]).forEach(a=>addMsg('jarvis','⟶ '+a.result.split('\n')[0].slice(0,120)));
+ if(r.pending){$('mdesc').textContent='JARVIS wants to run '+r.pending.desc;$('modal').classList.add('show');$('yes').onclick=()=>decide(r.pending.id,true);$('no').onclick=()=>decide(r.pending.id,false)}
+ await speak(r.reply);if(state!='listening')setState('idle')}
+async function decide(id,ok){$('modal').classList.remove('show');const r=await post('confirm',{id,approve:ok});addMsg('jarvis',r.result);speak(r.result)}
+
+/* speech out */
+function stopSpeaking(){if(curAudio){curAudio.pause();curAudio=null}speechSynthesis.cancel()}
+async function speak(text){setState('speaking');const c=cfg();
+ try{const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  if(r.status!=200)throw 0;const a=new Audio(URL.createObjectURL(await r.blob()));a.volume=c.vol;a.playbackRate=c.rate;curAudio=a;
+  await ctxInit();const src=audioCtx.createMediaElementSource(a);const an=audioCtx.createAnalyser();an.fftSize=256;src.connect(an);an.connect(audioCtx.destination);
+  const buf=new Uint8Array(an.frequencyBinCount);let alive=true;(function lv(){if(!alive)return;an.getByteFrequencyData(buf);document.documentElement.style.setProperty('--lvl',(buf.reduce((x,y)=>x+y)/buf.length/160).toFixed(2));requestAnimationFrame(lv)})();
+  await new Promise(res=>{a.onended=a.onpause=res;a.play().catch(res)});alive=false;
+ }catch{await new Promise(res=>{const u=new SpeechSynthesisUtterance(text);u.rate=c.rate;u.volume=c.vol;u.onend=u.onerror=res;
+  let t=setInterval(()=>document.documentElement.style.setProperty('--lvl',(Math.random()*.7).toFixed(2)),90);const f=()=>{clearInterval(t);res()};u.onend=u.onerror=f;speechSynthesis.speak(u)})}
+ document.documentElement.style.setProperty('--lvl',0);setState(micOn?'listening':'idle')}
+async function ctxInit(){audioCtx=audioCtx||new AudioContext();if(audioCtx.state=='suspended')await audioCtx.resume()}
+
+/* mic + wake word */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+async function micStart(){if(!SR){$('s_voice').textContent='UNSUPPORTED';$('d_voice').className='dot off';alert('Speech recognition needs Chrome or Edge.');return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true});await ctxInit();const s=audioCtx.createMediaStreamSource(st);analyser=audioCtx.createAnalyser();analyser.fftSize=256;s.connect(analyser)}catch{$('mstat').textContent='Microphone blocked';return}
+ rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang='en-US';
+ rec.onresult=e=>{const r=e.results[e.results.length-1],t=r[0].transcript.trim(),low=t.toLowerCase();
+  if(state=='speaking'&&/jarvis|stop|cancel/.test(low)){stopSpeaking();setState('listening')}   // voice interruption
+  if(!r.isFinal||state=='speaking'||state=='processing')return;
+  const m=low.match(/(?:hey|hi|okay|ok)?,?\s*jarvis[,.!]?\s*(.*)/),c=cfg();
+  if(m){awakeUntil=Date.now()+10000;const rest=t.slice(t.toLowerCase().indexOf('jarvis')+6).replace(/^[,.!\s]+/,'');rest?ask(rest):(addMsg('jarvis',c.greet),$('says').textContent=c.greet,speak(c.greet))}
+  else if(!c.wake||Date.now()<awakeUntil){awakeUntil=Date.now()+10000;ask(t)}};
+ rec.onend=()=>{if(micOn)try{rec.start()}catch{}};rec.start();micOn=true;setState('listening');$('mic').textContent='Deactivate mic';$('mic').classList.add('on');$('mstat').textContent=cfg().wake?'Listening for “Hey JARVIS”':'Listening';drawWave()}
+function micStop(){micOn=false;rec&&rec.stop();setState('idle');$('mic').textContent='Activate mic';$('mic').classList.remove('on');$('mstat').textContent='Microphone off'}
+$('mic').onclick=()=>micOn?micStop():micStart();
+const cv=$('wave'),cx=cv.getContext('2d');
+function drawWave(){cx.clearRect(0,0,600,140);const n=64,buf=new Uint8Array(128);if(analyser&&micOn)analyser.getByteFrequencyData(buf);
+ for(let i=0;i<n;i++){const v=micOn?buf[i]/255:.04,h=4+v*120,x=i*9.4+4;const g=cx.createLinearGradient(0,70-h/2,0,70+h/2);g.addColorStop(0,'#1a8cff');g.addColorStop(.5,'#35d8ff');g.addColorStop(1,'#1a8cff');cx.fillStyle=g;cx.fillRect(x,70-h/2,4,h)}
+ requestAnimationFrame(drawWave)}
+drawWave();
+
+/* memory */
+async function mem(){const q=$('msearch').value,l=await api('memories?q='+encodeURIComponent(q));const el=$('mlist');el.innerHTML='';
+ if(!l.length)el.innerHTML='<div style="color:var(--dim)">Nothing stored yet. Say “remember that…” or add a note.</div>';
+ l.forEach(m=>{const d=document.createElement('div');d.className='mem';const s=document.createElement('span');s.contentEditable=true;s.textContent=m.text;s.onblur=()=>post('memories/'+m.id,{text:s.textContent},'PUT');
+  const b=document.createElement('button');b.textContent='✕';b.title='Delete';b.onclick=async()=>{await api('memories/'+m.id,{method:'DELETE'});mem()};d.append(s,b);el.append(d)})}
+$('msearch').oninput=mem;$('madd').onclick=async()=>{const t=prompt('What should JARVIS remember?');if(t){await post('memories',{text:t});mem()}};mem();setInterval(mem,15000);
+
+/* controls, quick actions, settings */
+$('send').onclick=()=>{ask($('txt').value);$('txt').value=''};$('txt').onkeydown=e=>{if(e.key=='Enter')$('send').click()};$('stop').onclick=()=>{stopSpeaking();setState(micOn?'listening':'idle')};
+[['Open browser','open my browser'],['System status','what is my computer CPU and memory usage?'],['Find documents','find my documents'],['Volume down','turn the volume down'],['New note','create a new text document called note.txt'],['Screenshot','take a screenshot']].forEach(([l,c])=>{const b=document.createElement('button');b.textContent=l;b.onclick=()=>ask(c);$('qa').append(b)});
+['s_greet','s_rate','s_vol','s_wake','s_memon'].forEach(id=>$(id).onchange=()=>{const e=$(id);post('settings/'+id,{v:e.type=='checkbox'?e.checked:e.value});if(id=='s_memon')post('settings/memory_on',{v:e.checked})});
+api('settings').then(s=>{for(const[k,v]of Object.entries(s)){const e=$(k);if(!e)continue;e.type=='checkbox'?e.checked=v:e.value=v}});
+api('history').then(h=>h.slice(-8).forEach(([r,c])=>addMsg(r=='user'?'user':'jarvis',c)));
+</script></body></html>
